@@ -1,0 +1,129 @@
+@import "~/styles/minireset.sass";
+@import "~/styles/variables.scss";
+@import "~/styles/layouts.scss";
+
+html,
+body {
+  font-family: $family-primary;
+}
+
+html {
+  background-color: white;
+  font-size: 16px;
+  min-width: 300px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  text-rendering: optimizeLegibility;
+  text-size-adjust: 100%;
+}
+
+article,
+aside,
+figure,
+footer,
+header,
+hgroup,
+section {
+  display: block;
+}
+
+button {
+  font-family: $family-primary;
+}
+
+input,
+select,
+textarea {
+  font-family: $family-secondary;
+}
+
+button,
+input,
+select,
+textarea {
+  border-color: transparent;
+  background-color: transparent;
+
+  &:focus {
+    outline: 0;
+  }
+}
+
+code,
+pre {
+  font-family: $family-mono;
+}
+
+body {
+  color: $grey-8;
+  font-size: 1rem;
+  font-weight: normal;
+  line-height: 1.5;
+}
+
+a {
+  color: $grey-8;
+  cursor: pointer;
+  text-decoration: none;
+  strong {
+    color: currentColor;
+  }
+  &:hover {
+    color: $grey-8;
+  }
+}
+
+code {
+  background-color: $grey-5;
+  color: $grey-8;
+  font-size: 0.875em;
+  font-weight: normal;
+  padding: 0.25em 0.5em 0.25em;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  vertical-align: baseline;
+}
+
+small {
+  font-size: 0.875em;
+}
+
+span {
+  font-style: inherit;
+  font-weight: inherit;
+}
+
+strong {
+  color: $grey-8;
+  font-weight: 700;
+}
+
+fieldset {
+  border: none;
+}
+
+pre {
+  background-color: $grey-5;
+  color: $grey-8;
+  font-size: 0.875em;
+  overflow-x: auto;
+  padding: 1.25rem 1.5rem;
+  white-space: pre;
+  word-wrap: normal;
+  code {
+    background-color: transparent;
+    color: currentColor;
+    font-size: 1em;
+    padding: 0;
+  }
+}
+
+div:focus {
+  outline: none;
+}
+
+:global #main-app {
+  min-height: calc(100vh);
+}

@@ -1,0 +1,22 @@
+@import "~/styles/variables.scss";
+
+$desktop: 800px;
+$desktop-wide: 1300px;
+
+@mixin mobile {
+  @media screen and (max-width: $desktop - 1px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media screen and (min-width: $desktop) {
+    @content;
+  }
+}
+
+@mixin desktop-wide {
+  @media screen and (min-width: $desktop-wide) {
+    @content;
+  }
+}

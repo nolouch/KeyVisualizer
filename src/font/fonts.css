@@ -1,0 +1,40 @@
+@font-face {
+  font-family: Fira Mono;
+  src: url("FiraMono-Regular.ttf");
+}
+
+@font-face {
+  font-family: Source Code Pro;
+  font-weight: 400;
+  src: url("SourceCodePro-Regular.ttf");
+}
+
+@font-face {
+  font-family: Source Code Pro;
+  font-weight: 500;
+  src: url("SourceCodePro-Medium.ttf");
+}
+
+@font-face {
+  font-family: Source Code Pro;
+  font-weight: 700;
+  src: url("SourceCodePro-Bold.ttf");
+}
+
+@font-face {
+  font-family: Poppins;
+  font-weight: 400;
+  src: url("Poppins-Regular.ttf");
+}
+
+@font-face {
+  font-family: Poppins;
+  font-weight: 500;
+  src: url("Poppins-Medium.ttf");
+}
+
+@font-face {
+  font-family: Poppins;
+  font-weight: 700;
+  src: url("Poppins-Bold.ttf");
+}
