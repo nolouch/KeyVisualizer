@@ -2,10 +2,10 @@ import React, { RefObject, useRef, useCallback, useEffect } from "react"
 import * as d3 from "d3"
 
 export type HeatmapSelection = {
-  startTime: number | null
-  endTime: number | null
-  startKey: string | null
-  endKey: string | null
+  startTime?: number
+  endTime?: number
+  startKey?: string
+  endKey?: string
 }
 
 export type KeyAxisEntry = {

@@ -1,9 +1,9 @@
 import { HeatmapData, HeatmapSelection } from "~/components/heatmap"
 import dummyData from '~/dummydata.json'
 
-export const APIURL = "http://172.16.5.31:2376/pd/apis/keyvisual/v1/"
+export const APIURL = "http://172.16.4.4:2888/pd/apis/keyvisual/v1/"
 
-export function fetchDummyData() {
+export async function fetchDummyHeatmap() {
     return dummyData
 }
 

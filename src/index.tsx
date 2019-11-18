@@ -1,12 +1,12 @@
-import React from "react"
+import React, { useState } from "react"
 import ReactDOM from "react-dom"
-import {fetchDummyData} from '~/api'
 import { Heatmap } from "~/components/heatmap"
+import { HeatmapPage } from "~/pages/heatmap-page"
 import "~/styles/global_styles.scss"
 
 ReactDOM.render(
   <>
-    <Heatmap width={1500} height={800} data={fetchDummyData()} onZoom={()=> {}}/>
+    <HeatmapPage />
   </>,
   document.getElementById("main-app")
 )
