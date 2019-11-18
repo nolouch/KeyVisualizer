@@ -54,6 +54,7 @@ function heatmapChart(
   onZoom: (selection: HeatmapSelection) => void
 ) {
   const margin = { top: 25, right: 25, bottom: 60, left: 155 }
+  const MSAARatio = 4
   const canvasWidth = width - margin.left - margin.right
   const canvasHeight = height - margin.top - margin.bottom
 
@@ -71,8 +72,10 @@ function heatmapChart(
 
   const canvas = container
     .append("canvas")
-    .attr("width", canvasWidth)
-    .attr("height", canvasHeight)
+    .attr("width", canvasWidth * MSAARatio)
+    .attr("height", canvasHeight * MSAARatio)
+    .style("width", canvasWidth + "px")
+    .style("height", canvasHeight + "px")
     .style("margin-top", margin.top + "px")
     .style("margin-right", margin.right + "px")
     .style("margin-bottom", margin.bottom + "px")
@@ -194,8 +197,8 @@ function heatmapChart(
       yScale.invert(canvasHeight * (1 / transform.k)),
       0,
       0,
-      canvasWidth,
-      canvasHeight
+      canvasWidth * MSAARatio,
+      canvasHeight * MSAARatio
     )
   }
 
@@ -213,8 +216,9 @@ function hideTicksWithoutLabel(axis) {
 }
 
 function createLayer(values: number[][]) {
-  const logScale = d3.scaleSymlog().domain([0, 10000])
-  const colorScale = d3.scaleSequential(d => d3.interpolateViridis(logScale(d)))
+  const maxValue = d3.max(values.map(array => d3.max(array)))
+  const logScale = d3.scaleSymlog().domain([0, maxValue])
+  const colorScale = d3.scaleSequential(d => d3.interpolateInferno(logScale(d)))
 
   const valueWidth = values.length
   const valueHeight = (values[0] || []).length
