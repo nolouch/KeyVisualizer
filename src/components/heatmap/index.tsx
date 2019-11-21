@@ -1,5 +1,6 @@
 import React, { RefObject, useRef, useCallback, useEffect } from "react"
 import * as d3 from "d3"
+import _ from "lodash"
 
 export type HeatmapSelection = {
   startTime?: number
@@ -112,11 +113,7 @@ function heatmapChart(
     )
     .ticks(10)
 
-  const labelAxis = categoryAxisGroup([
-    dummyCategories,
-    dummyCategories,
-    dummyCategories,
-  ])
+  const labelAxis = labelAxisGroup(aggrKeyAxisLabel(data.keyAxis), yScale)
 
   const xAxisSvg = axis
     .append("g")
@@ -194,10 +191,13 @@ function heatmapChart(
   function zoomed(transform) {
     lastZoomTransform = transform
 
-    xAxisSvg.call(xAxis.scale(transform.rescaleX(xScale)))
-    // yAxisSvg.call(yAxis.scale(transform.rescaleY(yScale)))
+    const rescaleX = transform.rescaleX(xScale)
+    const rescaleY = transform.rescaleY(yScale)
+
+    xAxisSvg.call(xAxis.scale(rescaleX))
+    // yAxisSvg.call(yAxis.scale(rescaleY))
     hideTicksWithoutLabel(axis)
-    labelAxisSvg.call(labelAxis)
+    labelAxisSvg.call(labelAxis.scale(rescaleY))
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
@@ -248,7 +248,6 @@ function createLayer(values: number[][]) {
     const x = pixel % valueWidth
     const y = Math.floor(pixel / valueWidth)
     const color = colorScale(values[x][y])
-    // const rgb = color.substring(1, color.length - 1).split("", 2)
 
     imageData[i] = parseInt(color.substring(1, 3), 16) // R
     imageData[i + 1] = parseInt(color.substring(3, 5), 16) // G
@@ -261,80 +260,167 @@ function createLayer(values: number[][]) {
   return canvas
 }
 
-type Category<T> = {
-  name: string,
-  start: T,
+type LabelGroup<Label> = {
+  labels: Label[]
+  keyAxis: KeyAxisEntry[]
+}
+
+type Label<T> = {
+  name: string
+  start: T
   end: T
 }
 
-type KeyCategory = Category<string>
-type TransformedCategory = Category<number>
+type KeyLabel = Label<string>
+type ScaledLabel = Label<number>
 
-const categoryAxisWidth = 20
-const dummyCategories: TransformedCategory[] = [
-  { name: "test1", start: 0, end: 100 },
-  { name: "test2", start: 100, end: 150 },
-  { name: "test3", start: 270, end: 280 },
-  { name: "test4", start: 290, end: 380 },
-  { name: "test5", start: 400, end: 500 },
-]
+const labelAxisWidth = 20
 
-function categoryAxisGroup(groups, scale) {
-  let transformedGroups = 
-  const categoryAxisGroup = selection => {
-    const g = selection.selectAll("g").data(groups)
+function aggrKeyAxisLabel(keyAxis: KeyAxisEntry[]): LabelGroup<KeyLabel>[] {
+  var result = _.times(4, () => ({
+    labels: [] as KeyLabel[],
+    keyAxis: keyAxis,
+  }))
+
+  for (var groupIdx = 0; groupIdx < result.length; groupIdx++) {
+    var lastLabel: string | null = null
+    var startKey: string | null = null
+    var startKeyIdx = 0
+
+    for (var keyIdx = 0; keyIdx < keyAxis.length; keyIdx++) {
+      const key = keyAxis[keyIdx].key
+      const label = keyAxis[keyIdx].labels[groupIdx]
+
+      if (label != lastLabel) {
+        if (startKey != null && lastLabel != null) {
+          result[groupIdx].labels.push({
+            name: lastLabel,
+            start: startKey,
+            end: key,
+          })
+          startKey = null
+        }
+
+        if (label != null) {
+          startKey = key
+          startKeyIdx = keyIdx
+        }
+      }
+
+      lastLabel = label
+    }
+  }
+
+  return result
+}
+
+function labelAxisGroup(groups: LabelGroup<KeyLabel>[], originScale) {
+  var rescale = originScale
+  const labelAxisGroup = selection => {
+    let scaledGroups = groups.map(
+      group => scaleLabelGroup(group, originScale, rescale).labels
+    )
+
+    const g = selection.selectAll("g").data(scaledGroups)
 
     g.enter()
       .append("g")
-      .each(function(categories, i) {
-        const group = d3
-          .select(this)
-          .attr("transform", `translate(${i * (categoryAxisWidth + 8)}, 0)`)
-
-        const rects = group.selectAll("rect").data(categories)
-        const texts = group.selectAll("text").data(categories)
-
-        rects
-          .enter()
-          .append("rect")
-          .attr("width", categoryAxisWidth)
-          .attr("height", category => category.end - category.start)
-          .attr("x", 0)
-          .attr("y", category => category.start)
-          .attr("stroke", "black")
-          // .attr('stroke-linejoin', 'round')
-          .attr("fill", "grey")
-
-        texts
-          .enter()
-          .append("text")
-          .attr("fill", "black")
-          .attr("writing-mode", "tb")
-          .attr(
-            "transform",
-            category => `translate(0, ${category.end - 8}) rotate(180)`
-          )
-          .attr("dominant-baseline", "hanging")
-          .text(category => category.name)
-          .call(hideTextOverflow)
-      })
+      .attr("transform", (d, i) => `translate(${i * (labelAxisWidth + 8)}, 0)`)
+      .call(labelAxis)
+    g.call(labelAxis)
+    g.exit().remove()
   }
 
-  categoryAxisGroup.rescale = function(scale) {
-
+  labelAxisGroup.scale = function(val) {
+    rescale = val
+    return labelAxisGroup
   }
 
-  return categoryAxisGroup
+  return labelAxisGroup
 }
 
-function transformCategoryGroups(groups, scale) {
+function labelAxis(group) {
+  const rects = group.selectAll("rect").data(d => {
+    return d
+  })
+  const texts = group.selectAll("text").data(d => d)
 
+  rects
+    .enter()
+    .append("rect")
+    .attr("width", labelAxisWidth)
+    .attr("height", label => label.end - label.start)
+    .attr("x", 0)
+    .attr("y", label => label.start)
+    .attr("stroke", "black")
+    .attr("fill", "grey")
+
+  rects.exit().remove()
+
+  rects
+    .attr("height", label => label.end - label.start)
+    .attr("y", label => label.start)
+
+  texts
+    .enter()
+    .append("text")
+    .attr("fill", "black")
+    .attr("writing-mode", "tb")
+    .attr(
+      "transform",
+      label => `translate(${labelAxisWidth / 2}, ${label.end - 8}) rotate(180)`
+    )
+    .attr("font-size", "14")
+    .text(label => label.name)
+    .call(hideTextOverflow)
+
+  texts.exit().remove()
+
+  texts
+    .attr(
+      "transform",
+      label => `translate(${labelAxisWidth / 2}, ${label.end - 8}) rotate(180)`
+    )
+    .text(label => label.name)
+    .call(hideTextOverflow)
+}
+
+function scaleLabelGroup(
+  group: LabelGroup<KeyLabel>,
+  originScale,
+  rescale
+): LabelGroup<ScaledLabel> {
+  var labels: ScaledLabel[] = []
+
+  for (const label of group.labels) {
+    const canvasStart = originScale.range()[0]
+    const canvasEnd = originScale.range()[1]
+    const startPos = rescale(
+      group.keyAxis.findIndex(key => key.key == label.start)
+    )
+    const endPos = rescale(
+      group.keyAxis.findIndex((key, idx) => idx != 0 && key.key == label.end)
+    )
+    const commonStart = Math.max(startPos, canvasStart)
+    const commonEnd = Math.min(endPos, canvasEnd)
+
+    if (commonEnd - commonStart > 0) {
+      labels.push({ name: label.name, start: commonStart, end: commonEnd })
+    }
+  }
+
+  const result = {
+    labels: labels,
+    keyAxis: group.keyAxis,
+  }
+
+  return result
 }
 
 function hideTextOverflow(text) {
-  text.style("display", category => {
-    const textWidth = category.name.length * 9
-    const rectWidth = category.end - category.start
+  text.style("display", label => {
+    const textWidth = label.name.length * 9
+    const rectWidth = label.end - label.start
     return rectWidth > textWidth ? "" : "none"
   })
 }
