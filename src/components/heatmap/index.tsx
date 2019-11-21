@@ -391,21 +391,54 @@ function scaleLabelGroup(
   rescale
 ): LabelGroup<ScaledLabel> {
   var labels: ScaledLabel[] = []
+  var lastKeyIdx = 0
+  var mergedSmallLabel
 
   for (const label of group.labels) {
     const canvasStart = originScale.range()[0]
     const canvasEnd = originScale.range()[1]
-    const startPos = rescale(
-      group.keyAxis.findIndex(key => key.key == label.start)
+    const startKeyIdx = _.findIndex(
+      group.keyAxis,
+      key => key.key == label.start,
+      lastKeyIdx
     )
-    const endPos = rescale(
-      group.keyAxis.findIndex((key, idx) => idx != 0 && key.key == label.end)
+    const endKeyIdx = _.findIndex(
+      group.keyAxis,
+      key => key.key == label.end,
+      lastKeyIdx
     )
+    const startPos = rescale(startKeyIdx)
+    const endPos = rescale(endKeyIdx)
     const commonStart = Math.max(startPos, canvasStart)
     const commonEnd = Math.min(endPos, canvasEnd)
+    lastKeyIdx = endKeyIdx
+
+    const mergeWidth = 3
+
+    if (mergedSmallLabel != null) {
+      if (
+        mergedSmallLabel.end - mergedSmallLabel.start >= mergeWidth ||
+        commonStart - mergedSmallLabel.end > mergeWidth
+      ) {
+        labels.push({
+          name: "",
+          start: mergedSmallLabel.start,
+          end: mergedSmallLabel.end,
+        })
+        mergedSmallLabel = null
+      }
+    }
 
     if (commonEnd - commonStart > 0) {
-      labels.push({ name: label.name, start: commonStart, end: commonEnd })
+      if (commonEnd - commonStart > mergeWidth) {
+        labels.push({ name: label.name, start: commonStart, end: commonEnd })
+      } else {
+        if (mergedSmallLabel == null) {
+          mergedSmallLabel = { start: commonStart, end: commonEnd }
+        } else {
+          mergedSmallLabel.end = commonEnd
+        }
+      }
     }
   }
 
