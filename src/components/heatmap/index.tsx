@@ -65,6 +65,12 @@ function heatmapChart(
     .style("margin", "20px")
     .text("Zoom")
 
+  const tooltips = container
+    .append("div")
+    .style("width", width + "px")
+    .style("height", height + "px")
+    .style("position", "absolute")
+
   const axis = container
     .append("svg")
     .style("width", width + "px")
@@ -143,7 +149,7 @@ function heatmapChart(
 
   zoomBtn.on("click", startBrush)
 
-  var lastZoomTransform
+  var zoomTransform
 
   function startBrush() {
     brushSvg.style("display", "")
@@ -155,8 +161,8 @@ function heatmapChart(
 
     if (selection) {
       brush.clear(brushSvg)
-      const domainTopLeft = lastZoomTransform.invert(selection[0])
-      const domainBottomRight = lastZoomTransform.invert(selection[1])
+      const domainTopLeft = zoomTransform.invert(selection[0])
+      const domainBottomRight = zoomTransform.invert(selection[1])
       const startTime =
         data.timeAxis[Math.round(xScale.invert(domainTopLeft[0]))]
       const endTime =
@@ -187,12 +193,13 @@ function heatmapChart(
       [canvasWidth, canvasHeight],
     ])
     .on("zoom", () => zoomed(d3.event.transform))
+    .on("start", hideTooltips)
 
   function zoomed(transform) {
-    lastZoomTransform = transform
+    zoomTransform = transform
 
-    const rescaleX = transform.rescaleX(xScale)
-    const rescaleY = transform.rescaleY(yScale)
+    const rescaleX = zoomTransform.rescaleX(xScale)
+    const rescaleY = zoomTransform.rescaleY(yScale)
 
     xAxisSvg.call(xAxis.scale(rescaleX))
     // yAxisSvg.call(yAxis.scale(rescaleY))
@@ -203,10 +210,10 @@ function heatmapChart(
 
     ctx.drawImage(
       dataCanvas,
-      xScale.invert(transform.invertX(0)),
-      yScale.invert(transform.invertY(0)),
-      xScale.invert(canvasWidth * (1 / transform.k)),
-      yScale.invert(canvasHeight * (1 / transform.k)),
+      xScale.invert(zoomTransform.invertX(0)),
+      yScale.invert(zoomTransform.invertY(0)),
+      xScale.invert(canvasWidth * (1 / zoomTransform.k)),
+      yScale.invert(canvasHeight * (1 / zoomTransform.k)),
       0,
       0,
       canvasWidth * MSAARatio,
@@ -214,7 +221,92 @@ function heatmapChart(
     )
   }
 
+  function hoverBehavior(axis) {
+    axis.on("mousemove", mousemove)
+    axis.on("mouseout", hideTooltips)
+    var lastMouseCanvasOffset = [0, 0]
+    function mousemove() {
+      const mouseTooltipOffset = d3.mouse(tooltips.node())
+      const mouseCanvasOffset = d3.mouse(canvas.node())
+
+      if (mouseCanvasOffset == lastMouseCanvasOffset) return
+      lastMouseCanvasOffset = mouseCanvasOffset
+
+      if (
+        mouseCanvasOffset[0] < 0 ||
+        mouseCanvasOffset[0] > canvasWidth ||
+        mouseCanvasOffset[1] < 0 ||
+        mouseCanvasOffset[1] > canvasHeight
+      ) {
+        hideTooltips()
+        return
+      }
+
+      const rescaleX = zoomTransform.rescaleX(xScale)
+      const rescaleY = zoomTransform.rescaleY(yScale)
+      const timeIdx = Math.floor(rescaleX.invert(mouseCanvasOffset[0]))
+      const keyIdx = Math.floor(rescaleY.invert(mouseCanvasOffset[1]))
+
+      // Refactor Me
+      const tooltipData = [
+        {
+          name: "Value",
+          value: data.values[timeIdx][keyIdx],
+        },
+        {
+          name: "Start Time",
+          value: d3.timeFormat("%B %d, %Y %H:%M:%S")(
+            new Date(data.timeAxis[timeIdx] * 1000)
+          ),
+        },
+        {
+          name: "End Time",
+          value: data.timeAxis[timeIdx + 1]
+            ? d3.timeFormat("%B %d, %Y %H:%M:%S")(
+                new Date(data.timeAxis[timeIdx + 1] * 1000)
+              )
+            : "",
+        },
+        { name: "Start Key", value: data.keyAxis[keyIdx].key },
+        {
+          name: "End Key",
+          value: data.keyAxis[keyIdx + 1] ? data.keyAxis[keyIdx + 1].key : "",
+        },
+      ]
+
+      const tooltipDiv = tooltips.selectAll("div").data([null])
+
+      tooltipDiv
+        .enter()
+        .append("div")
+        .style("position", "absolute")
+        .style("background-color", "#333")
+        .style("color", "#eee")
+        .style("padding", "5px")
+        .merge(tooltipDiv)
+        .style("left", mouseTooltipOffset[0] + 20 + "px")
+        .style("top", mouseTooltipOffset[1] + 20 + "px")
+
+      const tooltipEntries = tooltipDiv.selectAll("p").data(tooltipData)
+
+      tooltipEntries
+        .enter()
+        .append("p")
+        .style("font-size", "12px")
+        .merge(tooltipEntries)
+        .text(d => d.value)
+
+      tooltipEntries.exit().remove()
+      tooltipDiv.exit().remove()
+    }
+  }
+
+  function hideTooltips() {
+    tooltips.selectAll("div").remove()
+  }
+
   axis.call(zoomBehavior)
+  axis.call(hoverBehavior)
 
   zoomed(d3.zoomIdentity)
 }
@@ -326,8 +418,9 @@ function labelAxisGroup(groups: LabelGroup<KeyLabel>[], originScale) {
     g.enter()
       .append("g")
       .attr("transform", (d, i) => `translate(${i * (labelAxisWidth + 8)}, 0)`)
+      .merge(g)
       .call(labelAxis)
-    g.call(labelAxis)
+
     g.exit().remove()
   }
 
@@ -349,40 +442,30 @@ function labelAxis(group) {
     .enter()
     .append("rect")
     .attr("width", labelAxisWidth)
-    .attr("height", label => label.end - label.start)
     .attr("x", 0)
-    .attr("y", label => label.start)
     .attr("stroke", "black")
     .attr("fill", "grey")
+    .merge(rects)
+    .attr("y", label => label.start)
+    .attr("height", label => label.end - label.start)
 
   rects.exit().remove()
-
-  rects
-    .attr("height", label => label.end - label.start)
-    .attr("y", label => label.start)
 
   texts
     .enter()
     .append("text")
     .attr("fill", "black")
     .attr("writing-mode", "tb")
+    .attr("font-size", "14")
+    .merge(texts)
     .attr(
       "transform",
       label => `translate(${labelAxisWidth / 2}, ${label.end - 8}) rotate(180)`
     )
-    .attr("font-size", "14")
     .text(label => label.name)
     .call(hideTextOverflow)
 
   texts.exit().remove()
-
-  texts
-    .attr(
-      "transform",
-      label => `translate(${labelAxisWidth / 2}, ${label.end - 8}) rotate(180)`
-    )
-    .text(label => label.name)
-    .call(hideTextOverflow)
 }
 
 function scaleLabelGroup(
