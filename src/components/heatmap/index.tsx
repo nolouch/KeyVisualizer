@@ -139,6 +139,7 @@ function heatmapChart(
       [0, 0],
       [canvasWidth, canvasHeight],
     ])
+    .on('start', brushStart)
     .on("end", brushEnd)
 
   const brushSvg = axis
@@ -147,12 +148,16 @@ function heatmapChart(
     .style("display", "none")
     .call(brush)
 
-  zoomBtn.on("click", startBrush)
+  zoomBtn.on("click", enableBrush)
 
   var zoomTransform
 
-  function startBrush() {
+  function enableBrush() {
     brushSvg.style("display", "")
+  }
+
+  function brushStart() {
+    hideTooltips()
   }
 
   function brushEnd() {
@@ -224,13 +229,11 @@ function heatmapChart(
   function hoverBehavior(axis) {
     axis.on("mousemove", mousemove)
     axis.on("mouseout", hideTooltips)
-    var lastMouseCanvasOffset = [0, 0]
     function mousemove() {
       const mouseTooltipOffset = d3.mouse(tooltips.node())
       const mouseCanvasOffset = d3.mouse(canvas.node())
 
-      if (mouseCanvasOffset == lastMouseCanvasOffset) return
-      lastMouseCanvasOffset = mouseCanvasOffset
+      if (d3.event.movementX == 0 && d3.event.movementY == 0) return
 
       if (
         mouseCanvasOffset[0] < 0 ||
