@@ -139,7 +139,7 @@ function heatmapChart(
       [0, 0],
       [canvasWidth, canvasHeight],
     ])
-    .on('start', brushStart)
+    .on("start", brushStart)
     .on("end", brushEnd)
 
   const brushSvg = axis
@@ -198,7 +198,13 @@ function heatmapChart(
       [canvasWidth, canvasHeight],
     ])
     .on("zoom", () => zoomed(d3.event.transform))
-    .on("start", hideTooltips)
+    .on("start", zoomStart)
+
+  function zoomStart() {
+    if (d3.event.sourceEvent.type == "mousedown") {
+      hideTooltips()
+    }
+  }
 
   function zoomed(transform) {
     zoomTransform = transform
