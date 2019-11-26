@@ -25,7 +25,7 @@ type HeatmapProps = {
   width: number
   height: number
   data: HeatmapData
-  onZoom: (selection: HeatmapRange) => void
+  onRefresh: (selection: HeatmapRange) => void
 }
 
 export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
@@ -40,7 +40,7 @@ export const Heatmap: React.FunctionComponent<HeatmapProps> = props => {
         props.width,
         props.height,
         props.data,
-        props.onZoom
+        props.onRefresh
       )
     }
   }, [props])

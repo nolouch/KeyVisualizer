@@ -21,7 +21,7 @@ export const HeatmapPage: React.FunctionComponent = props => {
           width={1500}
           height={800}
           data={heatmapData}
-          onZoom={() => {}}
+          onRefresh={() => {}}
         />
       ) : (
         <></>
