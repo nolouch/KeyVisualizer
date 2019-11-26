@@ -1,4 +1,4 @@
-import { HeatmapData, HeatmapSelection } from "~/components/heatmap"
+import { HeatmapData, HeatmapRange } from "~/components/heatmap"
 import dummyData from '~/dummydata.json'
 
 export const APIURL = "http://172.16.4.4:2888/pd/apis/keyvisual/v1"
@@ -7,7 +7,7 @@ export async function fetchDummyHeatmap() {
     return dummyData
 }
 
-export async function fetchHeatmap(selection: HeatmapSelection) {
+export async function fetchHeatmap(selection: HeatmapRange) {
   var url = `${APIURL}/heatmaps?type=write_bytes`
   if (selection.startTime) url += `&startTime=${selection.startTime}`
   if (selection.endTime) url += `&endTime=${selection.endTime}`
