@@ -9,7 +9,7 @@ export const HeatmapPage: React.FunctionComponent = props => {
 
   useEffect(() => {
     const load = async () => {
-      if (!heatmapData) setHeatmapData(await fetchDummyHeatmap())
+      if (!heatmapData) setHeatmapData(await fetchHeatmap({}))
     }
     load()
   })

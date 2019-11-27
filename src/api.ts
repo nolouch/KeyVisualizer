@@ -15,7 +15,7 @@ export async function fetchHeatmap(selection: HeatmapRange) {
   if (selection.endKey) url += `&endKey=${selection.endKey}`
 
   const data: HeatmapData = await sendRequest(url, "get")
-  data.timeAxis = data.timeAxis.map(timestamp => timestamp * 1000)
+  data.timeAxis = data.timeAxis.map(timestamp => timestamp)
 
   return data
 }
