@@ -11,7 +11,7 @@ export function heatmapChart(
   data: HeatmapData,
   onRefresh: (range: HeatmapRange) => void
 ) {
-  const margin = { top: 25, right: 25, bottom: 60, left: 155 }
+  const margin = { top: 25, right: 25, bottom: 60, left: 80}
   const MSAARatio = 4
   const canvasWidth = width - margin.left - margin.right
   const canvasHeight = height - margin.top - margin.bottom
